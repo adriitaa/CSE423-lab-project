@@ -6,7 +6,7 @@ import math
 
 window_width, window_height = 1000, 800
 camera_angle_y = 0
-camera_angle_x = 30  # Initial downward angle
+camera_angle_x = 30 
 
 road_boundary = 800
 line_height = 0.1
