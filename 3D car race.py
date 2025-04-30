@@ -1,7 +1,7 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-
+from OpenGL.GLUT import GLUT_BITMAP_HELVETICA_18
 import random
 import math
 import time
@@ -36,7 +36,6 @@ spheres_per_cloud = 5
 day_night_factor = 1.0
 weather_mode = 'normal'
 
-
 raindrops = []
 max_raindrops = 800
 rain_height = 100
@@ -51,6 +50,11 @@ obstacle_generation_distance = 400
 obstacle_check_distance = 500
 min_obstacle_distance = 50
 obstacle_spawn_probability = 0.03
+obstacle_pulse = 10
+zoom_measure = 0.05
+obstacle_speed = 0.05
+obs_sway = 2
+sway_dist = 1
 
 game_over = False
 score = 0
@@ -59,26 +63,26 @@ max_collisions = 3
 
 key_states = {}
 
+track_curve_amp = 10.0
 
-track_curve_amp   = 10.0
+track_curve_freq = 0.01
 
-track_curve_freq  = 0.01
+hill_amplitude = 2.0
 
+hill_frequency = 0.005
 
-hill_amplitude    =  2.0
-
-hill_frequency    =  0.005
-
-
-track_segments    = 20
+track_segments = 20
 camera_zoom = 30.0
 
-#helper function lagbe 
+
+# helper function lagbe
 def getCenterX(z):
     return track_curve_amp * math.sin(track_curve_freq * z)
 
+
 def getRoadHeight(z):
     return hill_amplitude + hill_amplitude * math.sin(hill_frequency * z)
+
 
 def render_bitmap_string(x, y, z, font, string):
     glRasterPos3f(x, y, z)
@@ -113,43 +117,37 @@ def generate_initial_clouds():
 def generate_obstacles():
     global obstacles
 
-    eps = 0.1  
+    eps = 0.1
     min_z = car_pos[2] + min_obstacle_distance * car_scale * 5
     max_z = car_pos[2] + obstacle_generation_distance
 
-   
     obstacles_ahead = sum(1 for obs in obstacles if min_z < obs[2] < max_z)
     if obstacles_ahead > 10:
         return
 
-   
     num_new = random.randint(1, 3)
     for k in range(num_new):
-       
         zc = random.uniform(min_z, max_z)
-        
+
         xc = getCenterX(zc)
         yc = getRoadHeight(zc)
 
-      
         dx_dz = (getCenterX(zc + eps) - xc) / eps
-        theta  = math.atan2(dx_dz, 1.0)
-    
-        nx =  math.cos(theta)
+        theta = math.atan2(dx_dz, 1.0)
+
+        nx = math.cos(theta)
         nz = -math.sin(theta)
 
-       
         offs = random.uniform(-road_boundary * 0.8, road_boundary * 0.8)
         x = xc + offs * nx
         z = zc + offs * nz
-      
+
         size = random.uniform(1.5 * car_scale, 4 * car_scale)
         y = yc + 0.5 * size
 
-        color = random.choice([(1.0, 1.0, 0.0),(0.0, 1.0, 0.0),(1.0, 0.5, 0.0),])
+        color = random.choice([(1.0, 1.0, 0.0), (0.0, 1.0, 0.0), (1.0, 0.5, 0.0), ])
 
-        obstacles.append([x, y, z, size, color])
-
+        obstacles.append([x, y, z, size, color]) # No lateral information stored
 
 
 def draw_cloud(cloud_data):
@@ -311,20 +309,16 @@ def draw_track():
         za = z0 + i * dz
         zb = za + dz
 
-       
         xa, xb = getCenterX(za), getCenterX(zb)
         ya, yb = getRoadHeight(za), getRoadHeight(zb)
 
-       
-        eps    = 0.1
+        eps = 0.1
         dx_approx = (getCenterX(za + eps) - xa) / eps
-        theta  = math.atan2(dx_approx, 1.0)
+        theta = math.atan2(dx_approx, 1.0)
 
-        
-        nx =  math.cos(theta)
+        nx = math.cos(theta)
         nz = -math.sin(theta)
 
-        
         lx_a, lz_a = xa - road_boundary * nx, za - road_boundary * nz
         rx_a, rz_a = xa + road_boundary * nx, za + road_boundary * nz
         lx_b, lz_b = xb - road_boundary * nx, zb - road_boundary * nz
@@ -340,13 +334,12 @@ def draw_track():
     draw_lines()
 
 
-
 def draw_lines():
     glColor3f(1, 1, 1)
     glLineWidth(3)
 
     start_z = math.floor((car_pos[2] - 50) / (line_length + gap_length)) * (line_length + gap_length)
-    end_z   = car_pos[2] + view_distance
+    end_z = car_pos[2] + view_distance
     z = start_z
 
     while z < end_z:
@@ -356,15 +349,21 @@ def draw_lines():
         xb, yb = getCenterX(zb), getRoadHeight(zb) + line_height
 
         glBegin(GL_LINES)
+        glVertex3f(xa - road_boundary, ya, za)
+        glVertex3f(xb - road_boundary, yb, zb)
+        glEnd()
+
+        glBegin(GL_LINES)
+        glVertex3f(xa + road_boundary, ya, za)
+        glVertex3f(xb + road_boundary, yb, zb)
+        glEnd()
+
+        glBegin(GL_LINES)
         glVertex3f(xa, ya, za)
         glVertex3f(xb, yb, zb)
         glEnd()
 
         z += line_length + gap_length
-
-
-
-
 
 
 def draw_dashed_line(x_position, start_z, end_z):
@@ -380,10 +379,11 @@ def draw_dashed_line(x_position, start_z, end_z):
 def draw_obstacle(obstacle):
     x, y, z, size, color = obstacle
     adjusted_color = [c * (0.5 + 0.5 * day_night_factor) for c in color]
+    scale_factor = 1.0 +zoom_measure * math.sin(time.time() * obstacle_pulse)
     glColor3fv(adjusted_color)
     glPushMatrix()
     glTranslatef(x, y, z)
-    glScalef(size * 0.8, size * 1.2, size * 0.8)
+    glScalef(size * 0.8*scale_factor, size * 1.2*scale_factor, size * 0.8*scale_factor)
     glutSolidCube(1.0)
     glPopMatrix()
 
@@ -462,13 +462,14 @@ def handle_continuous_keys():
         day_night_factor -= day_night_step
         if day_night_factor < 0.1: day_night_factor = 0.1
 
+
 def update(value):
     global car_pos, car_speed, car_rotation, clouds, game_over, obstacles, score, day_night_factor, weather_mode, raindrops
 
     handle_continuous_keys()
 
     if not game_over:
-       
+
         if car_speed > 0:
             car_speed -= car_natural_deceleration
             if car_speed < 0:
@@ -478,16 +479,13 @@ def update(value):
             if car_speed > 0:
                 car_speed = 0
 
-       
         delta_x = car_speed * math.sin(math.radians(car_rotation))
         delta_z = car_speed * math.cos(math.radians(car_rotation))
         car_pos[0] += delta_x
         car_pos[2] -= delta_z
 
-
         car_pos[1] = getRoadHeight(car_pos[2]) + 0.6 * car_scale
 
-    
         max_x = road_boundary - 1.5 * car_scale
         if car_pos[0] > max_x:
             car_pos[0] = max_x
@@ -496,10 +494,8 @@ def update(value):
             car_pos[0] = -max_x
             car_speed *= 0.8
 
-      
         obstacles = [obs for obs in obstacles if obs[2] > car_pos[2] - 50]
 
-      
         max_obs_z = car_pos[2]
         if obstacles:
             max_obs_z = max(obs[2] for obs in obstacles)
@@ -507,18 +503,40 @@ def update(value):
             if max_obs_z < car_pos[2] + obstacle_generation_distance:
                 generate_obstacles()
 
-       
         check_collision()
         if car_speed != 0:
             score += int(abs(car_speed) * 0.5 + 1)
 
-      
         if weather_mode == 'rainy':
             update_rain()
         else:
             raindrops = []
 
-   
+        new_obstacles = []
+        sway_amplitude = 0.005 * car_scale  # Overall amplitude of sway
+        for obstacle in obstacles:
+            x_base, y, z, size, color = obstacle
+            z -= obstacle_speed
+
+            # Calculate a horizontal offset based on z and time
+            # Using z makes the sway unique for each obstacle based on its distance
+            sway = sway_amplitude * math.sin(z * 0.1 + time.time() * 2.0)  # Adjust factors for speed and frequency
+            x = x_base + sway
+
+            # Basic boundary check
+            half_obstacle_width = (size * 0.8) / 2.0
+            road_center_x = getCenterX(z)
+            road_left = road_center_x - road_boundary + half_obstacle_width * 1.2
+            road_right = road_center_x + road_boundary - half_obstacle_width * 1.2
+
+            if x < road_left:
+                x = road_left
+            elif x > road_right:
+                x = road_right
+
+            new_obstacles.append([x, y, z, size, color])
+        obstacles = new_obstacles
+
     for i in range(len(clouds)):
         clouds[i][0] -= cloud_speed
         recycle_boundary = road_boundary * 15
@@ -529,8 +547,6 @@ def update(value):
 
     glutPostRedisplay()
     glutTimerFunc(16, update, 0)
-
-
 
 
 def update_rain():
@@ -761,7 +777,7 @@ def main():
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)
     glutInitWindowSize(window_width, window_height)
     glutInitWindowPosition(50, 50)
-    wind = glutCreateWindow(b'Enhanced 3D Racing Game')
+    wind = glutCreateWindow(b'A 3D Racing Game')
 
     init()
 
