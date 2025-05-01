@@ -653,21 +653,19 @@ def show_screen():
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
 
-    setup_camera()
 
+    glViewport(0, 0, window_width, window_height)
+    setup_camera()
     draw_field()
     for cloud in clouds:
         draw_cloud(cloud)
-
     draw_track()
-
     for obstacle in obstacles:
         draw_obstacle(obstacle)
-
     draw_car()
-
     if weather_mode == 'rainy':
         draw_rain()
+
 
     glMatrixMode(GL_PROJECTION)
     glPushMatrix()
@@ -676,14 +674,11 @@ def show_screen():
     glMatrixMode(GL_MODELVIEW)
     glPushMatrix()
     glLoadIdentity()
-
     glDisable(GL_DEPTH_TEST)
-
     glColor3f(1.0, 1.0, 1.0)
 
     render_bitmap_string_2d(10, window_height - 30, GLUT_BITMAP_HELVETICA_18, f"Score: {score}")
-    render_bitmap_string_2d(10, window_height - 55, GLUT_BITMAP_HELVETICA_18,
-                            f"Collisions: {collision_count}/{max_collisions}")
+    render_bitmap_string_2d(10, window_height - 55, GLUT_BITMAP_HELVETICA_18, f"Collisions: {collision_count}/{max_collisions}")
     render_bitmap_string_2d(10, window_height - 80, GLUT_BITMAP_HELVETICA_18, f"Weather: {weather_mode.capitalize()}")
     render_bitmap_string_2d(10, window_height - 105, GLUT_BITMAP_HELVETICA_18, f"Day/Night: {day_night_factor:.2f}")
     if weather_mode == 'rainy':
@@ -693,23 +688,63 @@ def show_screen():
         msg_game_over = "Game Over!"
         msg_score = f"Final Score: {score}"
         msg_restart = "Press 'R' to Restart"
-
         glColor3f(1.0, 0.2, 0.2)
-        render_bitmap_string_2d(window_width // 2 - 60, window_height // 2 + 10, GLUT_BITMAP_TIMES_ROMAN_24,
-                                msg_game_over)
-
+        render_bitmap_string_2d(window_width // 2 - 60, window_height // 2 + 10, GLUT_BITMAP_TIMES_ROMAN_24, msg_game_over)
         glColor3f(1.0, 1.0, 1.0)
         render_bitmap_string_2d(window_width // 2 - 70, window_height // 2 - 20, GLUT_BITMAP_HELVETICA_18, msg_score)
         render_bitmap_string_2d(window_width // 2 - 80, window_height // 2 - 50, GLUT_BITMAP_HELVETICA_18, msg_restart)
 
     glEnable(GL_DEPTH_TEST)
-
     glMatrixMode(GL_PROJECTION)
     glPopMatrix()
     glMatrixMode(GL_MODELVIEW)
     glPopMatrix()
 
+   #map
+    glViewport(window_width - 220, 20, 200, 200)
+    glScissor(window_width - 220, 20, 200, 200)
+    glEnable(GL_SCISSOR_TEST)
+    glClearColor(0.05, 0.05, 0.05, 1.0)
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    glDisable(GL_SCISSOR_TEST)
+
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    glOrtho(-30, 30, -30, 30, -100, 500)
+    glMatrixMode(GL_MODELVIEW)
+    glLoadIdentity()
+
+    gluLookAt(car_pos[0], 100, car_pos[2], car_pos[0], 0, car_pos[2], 0, 0, -1)
+
+    # Draw street base
+    glColor3f(0.2, 0.2, 0.2)  # Dark road
+    glBegin(GL_QUADS)
+    glVertex3f(-road_boundary, 0, car_pos[2] - 30)
+    glVertex3f(road_boundary, 0, car_pos[2] - 30)
+    glVertex3f(road_boundary, 0, car_pos[2] + 30)
+    glVertex3f(-road_boundary, 0, car_pos[2] + 30)
+    glEnd()
+
+    # Draw obstacles as red dots
+    for obs in obstacles:
+        x, y, z, size, _ = obs
+        glColor3f(1.0, 0.0, 0.0)  # Red
+        glPushMatrix()
+        glTranslatef(x, 0.5, z)
+        glutSolidSphere(0.5, 8, 8)
+        glPopMatrix()
+
+    # Draw car as green dot
+    glColor3f(0.0, 1.0, 0.0)
+    glPushMatrix()
+    glTranslatef(car_pos[0], 0.5, car_pos[2])
+    glutSolidSphere(0.7, 10, 10)
+    glPopMatrix()
+
+    # Reset viewport
+    glViewport(0, 0, window_width, window_height)
     glutSwapBuffers()
+
 
 
 def special_keys(key, x, y):
