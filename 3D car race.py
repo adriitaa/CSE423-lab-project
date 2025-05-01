@@ -1,10 +1,11 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-from OpenGL.GLUT import GLUT_BITMAP_HELVETICA_18
+
 import random
 import math
 import time
+
 
 window_width, window_height = 1000, 800
 camera_angle_y = 0
@@ -260,9 +261,9 @@ def setup_camera():
         cam_y = car_pos[1] + 1.0 * car_scale
         cam_z = car_pos[2] - 1.2 * car_scale * math.cos(math.radians(car_rotation))
 
-        look_x = cam_x + 20 * car_scale * math.sin(math.radians(car_rotation))
+        look_x = cam_x + 30 * car_scale * math.sin(math.radians(car_rotation))
         look_y = cam_y
-        look_z = cam_z - 20 * car_scale * math.cos(math.radians(car_rotation))
+        look_z = cam_z - 30 * car_scale * math.cos(math.radians(car_rotation))
 
         gluLookAt(cam_x, cam_y, cam_z, look_x, look_y, look_z, 0, 1, 0)
     else:
@@ -617,7 +618,7 @@ def check_collision():
                 car_speed = 0
 
     for index in sorted(collided_obstacle_indices, reverse=True):
-        print(f"Removing obstacle at index {index}")
+        # print(f"Removing obstacle at index {index}")
         del obstacles[index]
 
     return len(collided_obstacle_indices) > 0
@@ -625,7 +626,7 @@ def check_collision():
 
 def reset_game():
     global car_pos, car_speed, car_rotation, game_over, collision_count, obstacles, score, day_night_factor, weather_mode, raindrops, key_states, camera_angle_y, first_person_mode
-    print("Resetting game...")
+    print("Resetting game")
     car_pos = [0, 0.6 * car_scale, 0]
     car_speed = 0
     car_rotation = 0.0
@@ -746,7 +747,6 @@ def show_screen():
     glutSwapBuffers()
 
 
-
 def special_keys(key, x, y):
     global camera_angle_y, camera_height_offset
 
@@ -783,10 +783,10 @@ def keyboard_keys_down(key, x, y):
             rain_angle += 5.0
             if rain_angle > 45.0:
                 rain_angle = -45.0
-            print(f"Rain angle changed to: {rain_angle:.1f}")
+
     elif key == b'f':
         first_person_mode = not first_person_mode
-        print(f"Camera mode: {'First Person' if first_person_mode else 'Third Person'}")
+        # print(f"Camera mode: {'First Person' if first_person_mode else 'Third Person'}")
 
 
 def keyboard_keys_up(key, x, y):
@@ -795,9 +795,9 @@ def keyboard_keys_up(key, x, y):
 
 def mouse_button(button, state, x, y):
     global first_person_mode
-    if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
+    if button == GLUT_RIGHT_BUTTON and state == GLUT_DOWN:
         first_person_mode = not first_person_mode
-        print(f"Camera mode: {'First Person' if first_person_mode else 'Third Person'}")
+        # print(f"Camera mode: {'First Person' if first_person_mode else 'Third Person'}")
 
 
 def init():
