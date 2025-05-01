@@ -719,8 +719,10 @@ def special_keys(key, x, y):
         if key == GLUT_KEY_UP:
             camera_height_offset += 1.0
         elif key == GLUT_KEY_DOWN:
-            camera_height_offset -= 1.0
-            if camera_height_offset < 2: camera_height_offset = 2
+            camera_height_offset -= 8.0  # make it drop faster
+            if camera_height_offset < -20:
+                camera_height_offset = -20  # allow camera to go "deeper" under eye level
+
         elif key == GLUT_KEY_LEFT:
             camera_angle_y = (camera_angle_y + 3) % 360
         elif key == GLUT_KEY_RIGHT:
