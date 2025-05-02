@@ -664,7 +664,6 @@ def check_collision():
 
 def reset_game():
     global car_pos, car_speed, car_rotation, game_over, collision_count, obstacles, score, day_night_factor, weather_mode, raindrops, key_states, camera_angle_y, first_person_mode
-    print("Resetting game")
     car_pos = [0, 0.6 * car_scale, 0]
     car_speed = 0
     car_rotation = 0.0
@@ -680,9 +679,7 @@ def reset_game():
     first_person_mode = False
     generate_obstacles()
     generate_initial_clouds()
-    print("Game reset complete.")
-
-
+    print("Restart")
 def show_screen():
     base_color_factor = day_night_factor
     if weather_mode == 'normal':
