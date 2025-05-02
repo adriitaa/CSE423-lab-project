@@ -418,34 +418,41 @@ def draw_obstacle(obstacle):
 
 
 def draw_rain():
-    if not raindrops:
+    if len(raindrops) == 0:
         return
-
     glEnable(GL_BLEND)
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
-    color = rain_color_day if day_night_factor > 0.5 else rain_color_night
-    final_color = [
-                      c * (0.6 + 0.4 * day_night_factor) for c in color[:3]
-                  ] + [color[3] * (0.5 + 0.5 * day_night_factor)]
+   
+    if day_night_factor > 0.5:
+        color = rain_color_day
+    else:
+        color = rain_color_night
+
+   
+    rgb = [c * (0.6 + 0.4 * day_night_factor) for c in color[:3]]  # R, G, B
+    alpha = color[3] * (0.5 + 0.5 * day_night_factor)              # A
+    final_color = rgb + [alpha]
+
+
     glColor4fv(final_color)
 
+    
     glLineWidth(1.5)
-
     drop_length = 0.8
-    dx = drop_length * math.tan(math.radians(rain_angle))
-    dz = 0
+    dx = drop_length * math.tan(math.radians(rain_angle))  # horizontal shift
+    dz = 0  # no forward/backward motion
 
+    
     glBegin(GL_LINES)
     for drop in raindrops:
         x, y, z = drop
-        glVertex3f(x, y, z)
-        glVertex3f(x + dx, y - drop_length, z + dz)
+        glVertex3f(x, y, z)                        
+        glVertex3f(x + dx, y - drop_length, z + dz)  
     glEnd()
 
+  
     glDisable(GL_BLEND)
-
-
 def handle_continuous_keys():
     global car_speed, car_rotation, day_night_factor, camera_angle_y
 
