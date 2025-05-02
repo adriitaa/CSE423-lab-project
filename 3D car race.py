@@ -10,8 +10,8 @@ import time
 window_width, window_height = 1000, 800
 camera_angle_y = 0
 camera_angle_x = 30
-camera_height_offset = 15
-camera_distance_offset = 20
+camera_height_offset = 15 ##3rd person er camera
+camera_distance_offset = 20 #3rd person dist
 first_person_mode = False
 
 road_boundary = 15
@@ -30,7 +30,7 @@ car_natural_deceleration = 0.02
 car_rotation = 0.0
 car_turn_speed = 2.0
 
-clouds = []
+clouds = [] #sobgula cloud er list
 num_clouds = 20
 cloud_speed = 0.1
 spheres_per_cloud = 5
@@ -62,7 +62,7 @@ score = 0
 collision_count = 0
 max_collisions = 3
 
-key_states = {}
+key_states = {} #kon key er kaj
 
 track_curve_amp = 10.0
 
@@ -76,27 +76,29 @@ track_segments = 20
 camera_zoom = 30.0
 
 
-# helper function
+# helper function for z position theke x position calculte
 def getCenterX(z):
     return track_curve_amp * math.sin(track_curve_freq * z)
+#road curves ar road turn
 
 
 def getRoadHeight(z):
+    #y position er jonno
     return hill_amplitude + hill_amplitude * math.sin(hill_frequency * z)
 
 
-def render_bitmap_string(x, y, z, font, string):
+def render_bitmap_string(x, y, z, font, string): #screen er sob lekhar jonno
     glRasterPos3f(x, y, z)
     for c in string:
-        glutBitmapCharacter(font, ord(c))
+        glutBitmapCharacter(font, ord(c)) #character generate
 
 
-def render_bitmap_string_2d(x, y, font, string):
+def render_bitmap_string_2d(x, y, font, string): #just conveert 2D position
     glWindowPos2f(x, y)
     for c in string:
         glutBitmapCharacter(font, ord(c))
 
-
+#random clouds work
 def generate_initial_clouds():
     global clouds
     clouds = []
@@ -107,7 +109,7 @@ def generate_initial_clouds():
         z = random.uniform(car_pos[2] - view_distance / 2, car_pos[2] + view_distance)
         size = random.uniform(30, 100)
         cloud_parts = []
-        for j in range(spheres_per_cloud):
+        for j in range(spheres_per_cloud): #curve ta sob cloud er
             offset_x = random.uniform(-0.4 * size, 0.4 * size)
             offset_y = random.uniform(-0.3 * size, 0.3 * size)
             offset_z = random.uniform(-0.4 * size, 0.4 * size)
@@ -118,22 +120,28 @@ def generate_initial_clouds():
 
 def generate_obstacles():
     global obstacles
-    eps = 0.1
+    eps = 0.1 #road er curve er direction
+    #obstaaclee not too close, not far
     min_z = car_pos[2] + min_obstacle_distance * car_scale * 5
     max_z = car_pos[2] + obstacle_generation_distance
 
-    obstacles_ahead = sum(1 for obs in obstacles if min_z < obs[2] < max_z)
-    if obstacles_ahead > 10:
+    obstacles_ahead = 0
+    for obs in obstacles:
+        if min_z < obs[2] < max_z:
+            obstacles_ahead += 1
+
+
+    if obstacles_ahead > 10: #10 er beshi hole add na
         return
 
     num_new = random.randint(1, 3)
     for k in range(num_new):
-        zc = random.uniform(min_z, max_z)
+        zc = random.uniform(min_z, max_z) #random position
 
-        xc = getCenterX(zc)
+        xc = getCenterX(zc) #road er centre
         yc = getRoadHeight(zc)
 
-        dx_dz = (getCenterX(zc + eps) - xc) / eps
+        dx_dz = (getCenterX(zc + eps) - xc) / eps #angle slope
         theta = math.atan2(dx_dz, 1.0)
 
         nx = math.cos(theta)
@@ -159,8 +167,8 @@ def draw_cloud(cloud_data):
 
     glPushMatrix()
     glTranslatef(x, y, z)
-    for part in cloud_parts:
-        offset_x, offset_y, offset_z, radius = part
+    for j in cloud_parts:
+        offset_x, offset_y, offset_z, radius = j
         glPushMatrix()
         glTranslatef(offset_x, offset_y, offset_z)
         glutSolidSphere(radius, 15, 15)
