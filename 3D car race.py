@@ -1,11 +1,11 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-
 import random
 import math
 import time
 
+#global variables
 
 window_width, window_height = 1000, 800
 camera_angle_y = 0
@@ -76,7 +76,7 @@ track_segments = 20
 camera_zoom = 30.0
 
 
-# helper function lagbe
+# helper function
 def getCenterX(z):
     return track_curve_amp * math.sin(track_curve_freq * z)
 
@@ -102,7 +102,8 @@ def generate_initial_clouds():
     clouds = []
     for i in range(num_clouds):
         x = random.uniform(-road_boundary * 15, road_boundary * 15)
-        y = random.uniform(150, 400)
+        y = random.uniform(300, 500)  # raised cloud height
+
         z = random.uniform(car_pos[2] - view_distance / 2, car_pos[2] + view_distance)
         size = random.uniform(30, 100)
         cloud_parts = []
@@ -117,7 +118,6 @@ def generate_initial_clouds():
 
 def generate_obstacles():
     global obstacles
-
     eps = 0.1
     min_z = car_pos[2] + min_obstacle_distance * car_scale * 5
     max_z = car_pos[2] + obstacle_generation_distance
@@ -419,7 +419,7 @@ def draw_rain():
 
 
 def handle_continuous_keys():
-    global car_speed, car_rotation, day_night_factor
+    global car_speed, car_rotation, day_night_factor, camera_angle_y
 
     if game_over:
         global car_speed
@@ -430,29 +430,32 @@ def handle_continuous_keys():
     braking = False
 
     if key_states.get(b's'):
-        car_speed += car_acceleration
-        if car_speed > max_car_speed: car_speed = max_car_speed
+        car_speed += car_acceleration * 0.5  # Reduce forward acceleration
+        if car_speed > max_car_speed * 0.5:  # Limit max forward speed
+            car_speed = max_car_speed * 0.5
         accelerating = True
 
     if key_states.get(b'w'):
         if car_speed > 0:
-            car_speed -= car_brake_deceleration
-            if car_speed < 0: car_speed = 0
+            car_speed -= car_brake_deceleration * 0.5  # Reduce braking
+            if car_speed < 0:
+                car_speed = 0
             braking = True
         else:
-            car_speed -= car_acceleration * 0.6
-            if car_speed < -max_car_speed * 0.5: car_speed = -max_car_speed * 0.5
+            car_speed -= car_acceleration * 0.3  # Reduce reverse acceleration
+            if car_speed < -max_car_speed * 0.3:  # Limit reverse speed
+                car_speed = -max_car_speed * 0.3
             accelerating = True
 
+    lateral_move_speed = 0.2  # Side move speed
     if key_states.get(b'a'):
-        if abs(car_speed) > 0.1 or True:
-            car_rotation += car_turn_speed * (car_speed / max_car_speed if abs(car_speed) > 0.1 else 0.5)
-            car_rotation %= 360
+        car_pos[0] -= lateral_move_speed
 
     if key_states.get(b'd'):
-        if abs(car_speed) > 0.1 or True:
-            car_rotation -= car_turn_speed * (car_speed / max_car_speed if abs(car_speed) > 0.1 else 0.5)
-            car_rotation %= 360
+        car_pos[0] += lateral_move_speed
+
+
+
 
     day_night_step = 0.005
     if key_states.get(b'o'):
@@ -543,7 +546,7 @@ def update(value):
         recycle_boundary = road_boundary * 15
         if clouds[i][0] < -recycle_boundary:
             clouds[i][0] = recycle_boundary
-            clouds[i][1] = random.uniform(150, 400)
+            clouds[i][1] = random.uniform(300, 500)  # ensure higher Y on recycle
             clouds[i][2] = random.uniform(car_pos[2] - view_distance / 2, car_pos[2] + view_distance)
 
     glutPostRedisplay()
@@ -726,19 +729,22 @@ def show_screen():
     glVertex3f(-road_boundary, 0, car_pos[2] + 30)
     glEnd()
 
-    # Draw obstacles as red dots
+
+    # Draw obstacles as green or yellow dots
     for obs in obstacles:
-        x, y, z, size, _ = obs
-        glColor3f(1.0, 0.0, 0.0)  # Red
+        x, y, z, size, color = obs
+        # Use actual obstacle color (which is already green or yellow or orange)
+        glColor3fv(color)
         glPushMatrix()
         glTranslatef(x, 0.5, z)
         glutSolidSphere(0.5, 8, 8)
         glPopMatrix()
 
-    # Draw car as green dot
-    glColor3f(0.0, 1.0, 0.0)
+    # Draw car as red dot, slightly larger
+    glColor3f(1.0, 0.0, 0.0)  # Red color
     glPushMatrix()
     glTranslatef(car_pos[0], 0.5, car_pos[2])
+    glScalef(1.5, 1.5, 1.5)  # Make the car dot a bit bigger
     glutSolidSphere(0.7, 10, 10)
     glPopMatrix()
 
