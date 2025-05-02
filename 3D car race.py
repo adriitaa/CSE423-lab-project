@@ -386,13 +386,33 @@ def draw_dashed_line(x_position, start_z, end_z):
 
 
 def draw_obstacle(obstacle):
+    #obstacle er data unpack
     x, y, z, size, color = obstacle
-    adjusted_color = [c * (0.5 + 0.5 * day_night_factor) for c in color]
-    scale_factor = 1.0 +zoom_measure * math.sin(time.time() * obstacle_pulse)
+
+    
+    adjusted_color = []
+    for c in color:
+        brightness = 0.5 + 0.5 * day_night_factor
+        adjusted_color.append(c * brightness)
+
+    
+    time_now = time.time()
+    scale_factor = 1.0 + zoom_measure * math.sin(time_now * obstacle_pulse)
+
+   
     glColor3fv(adjusted_color)
+
+    
     glPushMatrix()
     glTranslatef(x, y, z)
-    glScalef(size * 0.8*scale_factor, size * 1.2*scale_factor, size * 0.8*scale_factor)
+
+    
+    width = size * 0.8 * scale_factor
+    height = size * 1.2 * scale_factor
+    depth = size * 0.8 * scale_factor
+    glScalef(width, height, depth)
+
+    
     glutSolidCube(1.0)
     glPopMatrix()
 
