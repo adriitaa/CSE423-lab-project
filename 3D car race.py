@@ -749,28 +749,33 @@ def special_keys(key, x, y):
 
 def keyboard_keys_down(key, x, y):
     global game_over, weather_mode, rain_angle, first_person_mode, day_night_factor
-
     key_states[key] = True
+    if key == b'r':
+        if game_over:
+            reset_game()
+            return
+        else:
 
-    if key == b'r' and game_over:
-        reset_game()
-        return
-    elif key == b'r' and not game_over:
-        weather_mode = 'rainy' if weather_mode == 'normal' else 'normal'
-        print(f"Weather changed to: {weather_mode}")
-    elif key == b'n':
+            if weather_mode == 'normal':
+                weather_mode = 'rainy'
+            else:
+                weather_mode = 'normal'
+            print(f"Weather changed to: {weather_mode}")
+
+
+    if key == b'n':
         weather_mode = 'normal'
         print(f"Weather changed to: {weather_mode}")
-    elif key == b't':
+
+
+    if key == b't':
         if weather_mode == 'rainy':
             rain_angle += 5.0
             if rain_angle > 45.0:
                 rain_angle = -45.0
 
-    elif key == b'f':
-        first_person_mode = not first_person_mode
-        # print(f"Camera mode: {'First Person' if first_person_mode else 'Third Person'}")
-
+    # if key == b'f':
+    #     first_person_mode = not first_person_mode
 
 def keyboard_keys_up(key, x, y):
     key_states[key] = False
